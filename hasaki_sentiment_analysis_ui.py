@@ -85,7 +85,7 @@ def search_product_name(product_name):
     filter_rules = data_products['ten_san_pham_sl_danh_gia'].str.contains(product_name, case=False)
     product = data_products[filter_rules]
 
-    search_all_text = FIND_ALL_TEXT + product_name
+    search_all_text = FIND_ALL_TEXT + '"' + product_name + '"'
     result = [search_all_text] + list(product["ten_san_pham_sl_danh_gia"].values)
 
     return result
@@ -98,7 +98,7 @@ def search_product_code(product_code):
     filter_rules = data_products['ma_san_pham_sl_danh_gia'].astype(str).str.contains(product_code, case=False)
     product = data_products[filter_rules]
 
-    search_all_text = FIND_ALL_TEXT + product_code
+    search_all_text = FIND_ALL_TEXT + '"' + product_code + '"'
     result = [search_all_text] + list(product["ma_san_pham_sl_danh_gia"].values)
 
     return result
@@ -496,6 +496,7 @@ def build_product_analysis():
         if selected_value is not None:
             if selected_value.startswith(FIND_ALL_TEXT):
                 input_text = selected_value[len(FIND_ALL_TEXT):]
+                input_text = input_text.replace('"', '')
 
                 search_result = search_product_name(input_text)
                 selected_value = []
@@ -516,6 +517,7 @@ def build_product_analysis():
         if selected_value is not None:
             if selected_value.startswith(FIND_ALL_TEXT):
                 input_text = selected_value[len(FIND_ALL_TEXT):]
+                input_text = input_text.replace('"', '')
 
                 search_result = search_product_code(input_text)
                 selected_value = []

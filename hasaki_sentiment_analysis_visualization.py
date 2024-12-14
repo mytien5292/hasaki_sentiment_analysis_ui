@@ -36,6 +36,32 @@ def show_overview(product_infos, product_feedbacks):
     # Hiển thị piechart bằng streamlit
     st.pyplot(fig)
 
+    # === Vẽ piechart cho các topics theo từng sentiment_label ===
+    for label in ["positive", "negative"]:
+        st.write(f"Phân phối topics cho sentiment: {label}")
+        
+        # Lọc các feedback theo sentiment_label hiện tại
+        feedbacks = product_feedbacks[product_feedbacks["sentiment_label"] == label]
+
+        if len(feedbacks) == 0:
+            st.write(f"Không có đánh giá cho sentiment: {label}")
+            continue
+        
+        # Đếm số lượng feedback theo cột topic
+        topic_counts = feedbacks["topics"].value_counts()
+
+        # Thay thế "No label" bằng "others"
+        topic_counts.index = topic_counts.index.str.replace("No label", "others")
+        
+        # Vẽ piechart
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.pie(topic_counts, labels=None, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')
+        ax.legend(topic_counts.index, title="Topics", loc="lower left", bbox_to_anchor=(1, 0, 0.5, 1))
+        
+        # Hiển thị piechart bằng streamlit
+        st.pyplot(fig)
+
 def show_feedback_count(product_infos, product_feedbacks):
     # --- Vẽ biểu đồ thể hiện số lượng feedback theo tháng ---
     # Chuyển cột ngay_binh_luan sang kiểu datetime
@@ -55,10 +81,35 @@ def show_feedback_count(product_infos, product_feedbacks):
 
     # Vẽ biểu đồ số lượng feedback theo từng tháng bằng linechart màu đỏ
     fig, ax = plt.subplots(figsize=(10, 6))
-    monthly_feedback_counts.plot(kind='line', ax=ax, color='red')
+    monthly_feedback_counts.plot(kind='bar', ax=ax, color='red')
     ax.set_xlabel('Tháng')
     ax.set_ylabel('Số lượng feedback')
     ax.set_title('Số lượng feedback theo từng tháng')
+    ax.grid(True)
+
+    # Hiển thị biểu đồ bằng streamlit
+    st.pyplot(fig)
+
+    # --- Vẽ biểu đồ thể hiện số lượng feedback theo giờ ---
+    # Chuyển cột gio_binh_luan sang kiểu datetime
+    product_feedbacks['gio_binh_luan'] = product_feedbacks['gio_binh_luan'].str.replace(' ', '')
+    product_feedbacks['gio_binh_luan'] = pd.to_datetime(product_feedbacks['gio_binh_luan'], format='%H:%M').dt.hour
+
+    # Đếm số lượng feedback theo từng giờ
+    hourly_feedback_counts = product_feedbacks['gio_binh_luan'].value_counts().sort_index()
+
+    # Đảm bảo tất cả các giờ đều có dữ liệu, nếu không thì mặc định là 0
+    all_hours = range(24)
+    hourly_feedback_counts = hourly_feedback_counts.reindex(all_hours, fill_value=0)
+
+    # Vẽ biểu đồ số lượng feedback theo từng giờ bằng bar chart màu xanh lá cây
+    fig, ax = plt.subplots(figsize=(10, 6))
+    hourly_feedback_counts.plot(kind='bar', ax=ax, color='green')
+    ax.set_xlabel('Giờ')
+    ax.set_ylabel('Số lượng feedback')
+    ax.set_title('Số lượng feedback theo từng giờ')
+    ax.set_xticks(all_hours)
+    ax.set_xticklabels([f'{hour}:00' for hour in all_hours])
     ax.grid(True)
 
     # Hiển thị biểu đồ bằng streamlit
