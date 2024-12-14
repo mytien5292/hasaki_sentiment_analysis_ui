@@ -5,65 +5,127 @@ import json
 import time
 
 
-from hasaki_sentiment_analysis import predict_sentiment
+from hasaki_sentiment_analysis_prediction import predict_sentiment
+from hasaki_sentiment_analysis_visualization import analyze_and_visualize
 from streamlit_searchbox import st_searchbox
 
 # ======= Load data part =======
 @st.cache_data
+def load_boost_words():
+    with open('data/tools/boost_words.txt', 'r', encoding='utf-8') as file:
+        boost_words = [line.strip() for line in file]
+    return boost_words
+
+@st.cache_data
 def load_data_products():
     data = pd.read_csv('data/san_pham_processed.csv')
+
+    if "data_feedbacks" not in st.session_state:
+        st.session_state.data_feedbacks = load_data_feedbacks()
+
+    data_feedbacks = st.session_state.data_feedbacks
+
+    data['so_luong_danh_gia'] = data['ma_san_pham'].map(data_feedbacks['ma_san_pham'].value_counts()).fillna(0).astype(int)
+
+    data['ten_san_pham_sl_danh_gia'] = data['ten_san_pham'] + " (" + data['so_luong_danh_gia'].astype(str) + " đánh giá)"
+    data['ma_san_pham_sl_danh_gia'] = data['ma_san_pham'].astype(str) + " (" + data['so_luong_danh_gia'].astype(str) + " đánh giá)"
+
     return data
 
 @st.cache_data
 def load_product_mapping():
-    data = pd.read_csv('data/san_pham_processed.csv')
-    product_mapping = dict(zip(data['ten_san_pham'], data['ma_san_pham']))
+    if "data_products" not in st.session_state:
+        st.session_state.data_products = load_data_products()
+    
+    data = st.session_state.data_products
+
+    product_mapping = dict(zip(data['ten_san_pham_sl_danh_gia'], data['ma_san_pham']))
     return product_mapping
 
+def is_existed(addded_words, word):
+    for x in addded_words:
+        if word in x:
+            return True
+    return False
+
+def apply_boost_words(text, boost_words):
+    parts = text.split()
+    added_words = []
+
+    for i in range(5, 0, -1):
+        for j in range(len(parts) - i + 1):
+            sub_text = ' '.join(parts[j:j+i])
+            if sub_text in boost_words and not is_existed(added_words, sub_text):
+                added_words.append(sub_text)
+
+    for word in added_words:
+        num_boost = word.count(' ')
+        text = text.replace(word, word.replace(" ", "_"))
+        for i in range(num_boost):
+            text = text + " " + word.replace(" ", "_")
+
+    return text
+
+@st.cache_data
+def load_data_feedbacks():
+    data = pd.read_csv('data/Danh_gia_with_label.csv')
+    boost_words = load_boost_words()
+
+    data['normalized_text_with_boost_words'] = data['normalized_text'].apply(lambda x: apply_boost_words(x, boost_words))
+
+    return data
 
 # ======= Logic part =======
 def search_product_name(product_name):
     if "data_products" not in st.session_state:
         st.session_state.data_products = load_data_products()
-    
     data_products = st.session_state.data_products
-    filter_rules = data_products['ten_san_pham'].str.contains(product_name, case=False)
+    filter_rules = data_products['ten_san_pham_sl_danh_gia'].str.contains(product_name, case=False)
     product = data_products[filter_rules]
 
-    return list(product["ten_san_pham"].values)
+    search_all_text = "Tìm tất cả sản phẩm có chứa từ khóa " + product_name
+    result = [search_all_text] + list(product["ten_san_pham_sl_danh_gia"].values)
+
+    return result
 
 def search_product_code(product_code):
     if "data_products" not in st.session_state:
         st.session_state.data_products = load_data_products()
     
     data_products = st.session_state.data_products
-    filter_rules = data_products['ma_san_pham'].astype(str).str.contains(product_code, case=False)
+    filter_rules = data_products['ma_san_pham_sl_danh_gia'].astype(str).str.contains(product_code, case=False)
     product = data_products[filter_rules]
 
-    return list(product["ma_san_pham"].values)
+    search_all_text = "Tìm tất cả sản phẩm có chứa từ khóa " + product_code
+    result = [search_all_text] + list(product["ma_san_pham_sl_danh_gia"].values)
+
+    return result
 
 def get_product_info(product_id):
     if "data_products" not in st.session_state:
         st.session_state.data_products = load_data_products()
+
+    if "data_feedbacks" not in st.session_state:
+        st.session_state.data_feedbacks = load_data_feedbacks()
     
     data_products = st.session_state.data_products
+    data_feedbacks = st.session_state.data_feedbacks
 
+    product_feedbacks = data_feedbacks[data_feedbacks['ma_san_pham'] == product_id]
     product_info = data_products[data_products['ma_san_pham'] == product_id]
 
-    return product_info
+    return product_info, product_feedbacks
 
 # ======= Analysis part =======
 
 
 # ======= UI part =======
 def show_product_info(product_id):
-    product_infos = get_product_info(product_id)
+    product_infos, product_feedbacks = get_product_info(product_id)
 
     if product_infos.empty:
         st.write("Không tìm thấy sản phẩm.")
         return
-    
-    print(product_infos)
 
     for product_info in product_infos.itertuples():
         #st.write(f"""##### {product_info.ten_san_pham}\n""")
@@ -88,17 +150,18 @@ def show_product_info(product_id):
         )
  
     st.markdown(
-    """
-    <div style='background-color: #66BB6A; padding: 10px; border-radius: 5px; text-align: center;'>
-        <h2 style='color: white; margin: 0;'>Phân tích sản phẩm</h2>
-    </div>
-    """,
-    unsafe_allow_html=True,
+        """
+        <div style='background-color: #66BB6A; padding: 10px; border-radius: 5px; text-align: center;'>
+            <h2 style='color: white; margin: 0;'>Phân tích sản phẩm</h2>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
     #st.image("media/sentiment_distribution.png", use_container_width=True, width=200)
     # Thêm khoảng cách trước hàng ảnh
     st.markdown("<br>", unsafe_allow_html=True)
 
+    analyze_and_visualize(product_infos, product_feedbacks)
 
 def business_objective_content():
     #st.image("media/hasaki_banner.jpg", width=800)
@@ -412,19 +475,29 @@ def build_product_analysis():
         selected_value = st_searchbox(
             search_product_name,
             placeholder="Tìm kiếm tên sản phẩm",
+            default_use_searchterm=True,
         )
+
+        print("--------------------------------")
+        print(selected_value)
+        print("--------------------------------")
 
         selected_value = product_mapping.get(selected_value, "Không tìm thấy mã sản phẩm")
     else:
         selected_value = st_searchbox(
             search_product_code,
             placeholder="Tìm kiếm mã sản phẩm",
+            default_use_searchterm=True,
         )
+
+        print("--------------------------------")
+        print(selected_value)
+        print("--------------------------------")
+
+        if selected_value is not None:
+            selected_value = int(selected_value.split(" ")[0])
     
     show_product_info(selected_value)
-
-
-    
    
 def new_product_analysis():
     input_type = st.radio("Chọn cách nhập dữ liệu:", ("Nhập từ bàn phím", "Nhập từ file"))
@@ -466,6 +539,13 @@ def new_product_analysis():
         st.write("Kết quả phân tích dữ liệu:")
         result = predict_sentiment(input_feedbacks)
         st.write(result)
+
+        st.download_button(
+            label="Download kết quả (.csv)",
+            data=result.to_csv(index=False),
+            file_name="sentiment_result.csv",
+            mime="text/csv",
+        )
             
 
 # ======= Main content =======
