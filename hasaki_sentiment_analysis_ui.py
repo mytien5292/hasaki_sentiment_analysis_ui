@@ -4,6 +4,7 @@ import streamlit as st
 import json
 import time
 
+
 from hasaki_sentiment_analysis import predict_sentiment
 from streamlit_searchbox import st_searchbox
 
@@ -18,6 +19,7 @@ def load_product_mapping():
     data = pd.read_csv('data/san_pham_processed.csv')
     product_mapping = dict(zip(data['ten_san_pham'], data['ma_san_pham']))
     return product_mapping
+
 
 # ======= Logic part =======
 def search_product_name(product_name):
@@ -58,6 +60,7 @@ def show_product_info(product_id):
     product_infos = get_product_info(product_id)
 
     if product_infos.empty:
+        st.write("Không tìm thấy sản phẩm.")
         return
     
     print(product_infos)
@@ -83,36 +86,51 @@ def show_product_info(product_id):
             """,
             unsafe_allow_html=True,
         )
+ 
+    st.markdown(
+    """
+    <div style='background-color: #66BB6A; padding: 10px; border-radius: 5px; text-align: center;'>
+        <h2 style='color: white; margin: 0;'>Phân tích sản phẩm</h2>
+    </div>
+    """,
+    unsafe_allow_html=True,
+    )
+    #st.image("media/sentiment_distribution.png", use_container_width=True, width=200)
+    # Thêm khoảng cách trước hàng ảnh
+    st.markdown("<br>", unsafe_allow_html=True)
+
 
 def business_objective_content():
-    st.image("media/hasaki_banner.jpg", width=800)
+    #st.image("media/hasaki_banner.jpg", width=800)
+
     #st.subheader("Đặt vấn đề")
     # Tiêu đề chính và các tiêu đề phụ với màu xanh lục
     st.markdown(
         """
-        <h3 style='color: green;'>1. Giới thiệu bài toán Recommendation sản phẩm mỹ phẩm cho Hasaki</h3>
+        <h3 style='color: green;'>1. Giới thiệu bài toán Sentiment Analysis sản phẩm mỹ phẩm cho Hasaki</h3>
         """,
         unsafe_allow_html=True,
     )
 
     # Nội dung dưới tiêu đề chính
     st.write("""
-    Trong lĩnh vực thương mại điện tử mỹ phẩm, việc cá nhân hóa trải nghiệm mua sắm là chìa khóa giúp nâng cao sự hài lòng của khách hàng và tối ưu doanh thu. Với danh mục sản phẩm đa dạng từ chăm sóc da, trang điểm đến dưỡng tóc, **Hasaki.vn** cần một hệ thống gợi ý sản phẩm thông minh để hỗ trợ khách hàng tìm kiếm và lựa chọn sản phẩm phù hợp.
+    Hasaki.vn là một là một nền tảng bán lẻ mỹ phẩm trực tuyến lớn, có hàng ngàn sản phẩm và đánh giá từ khách hàng. Các đánh giá (reviews) này chứa thông tin quan trọng, là chìa khoá giúp Hasaki hiểu được cảm nhận của khách hàng về sản phẩm, dịch vụ và trải nghiệm mua sắm. Tuy nhiên, việc phân tích thủ công rất tốn thời gian và khó thực hiện ở quy mô lớn. Vì vậy cần phải xây dựng hệ thống phân tích cảm xúc (Sentiment Analysis) để tự động hóa việc phân loại và trích xuất thông tin từ đánh giá của khách hàng.
     """)
 
-    # Tiêu đề "2. Mục tiêu của hệ thống Recommendation:" với màu xanh lục
+    # Tiêu đề "2. Mục tiêu của hệ thống Sentiment Analysis:" với màu xanh lục
     st.markdown(
         """
-        <h3 style='color: green;'>2. Mục tiêu của hệ thống Recommendation</h3>
+        <h3 style='color: green;'>2. Mục tiêu của hệ thống Sentiment Analysis</h3>
         """,
         unsafe_allow_html=True,
     )
 
     # Nội dung dưới tiêu đề phụ
     st.write("""
-    - **Cá nhân hóa**: Đề xuất sản phẩm dựa trên sở thích và hành vi của khách hàng.
-    - **Tăng tỷ lệ chuyển đổi**: Gợi ý sản phẩm liên quan và thúc đẩy bán chéo.
-    - **Độ chính xác cao**: Ứng dụng các phương pháp như Collaborative Filtering, Content-Based Filtering, và Hybrid.
+    - **Phân loại cảm xúc của các bình luận**: Xác định cảm xúc của khách hàng trong các đánh giá sản phẩm là tích cực, tiêu cực.
+    - **Hiểu sâu hơn về khách hàng**: Trích xuất thông tin hữu ích như: khách hàng thích điều gì và không hài lòng điều gì.
+    - **Hỗ trợ ra quyết định**: Giúp Hasaki.vn cải thiện sản phẩm và dịch vụ, tăng mức độ hài lòng và giữ chân khách hàng.
+    - **Ứng dụng thực tế**: Tự động gắn nhãn đánh giá trên website. Hỗ trợ cho hệ thống chăm sóc khách hàng và nâng cao chất lượng marketing.
     """)
 
     # Tiêu đề "3. Lợi ích cho Hasaki:" với màu xanh lục
@@ -129,6 +147,258 @@ def business_objective_content():
     - Tối ưu hóa chiến lược kinh doanh.
     - Khẳng định vị thế dẫn đầu trong ngành mỹ phẩm tại Việt Nam.
     """)
+
+def build_project_construction():
+    #st.image("media/hasaki_banner.jpg", width=800)
+    #1. Crawl thêm dữ liệu từ các categorical
+    st.markdown(
+        """
+        <h3 style='color: green;'>1. Crawl thêm dữ liệu từ các categorical</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        Crawl thêm dữ liệu từ các categorical trên trang web Hasaki.vn: chăm sóc cơ thể, chăm sóc tóc và da đầu, trang điểm, chăm sóc cá nhân, chăm sóc da mặt.
+        """,
+        unsafe_allow_html=True,
+    )
+    st.image("media/crawl_du_lieu.png", use_container_width=True, width=800)
+
+    #2. Labeling data 
+    st.markdown(
+        """
+        <h3 style='color: green;'>2. Labeling data</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        **Cần 2 lớp labels:**
+        - 2 sắc thái của bình luận: Positive/Negative (Không có neutral do khó nhận dạng loại này)
+        - 4 chủ đề (topics) mà các bình luận hay nhắc đến:
+            + Pricing - Giá cả
+            + Fragrance - Mùi thơm
+            + Usage Experience - Trải nghiệm sử dụng
+            + Body Impact - Tác động thế nào lên cơ thể
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        **Với label sắc thái của bình luận:**
+        - Nếu review có số sao >= 4 => Positive
+        - Nếu review có số sao < 4 => Negative
+
+        Với label về chủ đề mà bình luận đang nói đến => Dùng matching từ khoá.
+        """,
+        unsafe_allow_html=True,
+    )
+    #3. Tiền xử lý dữ liệu
+    st.markdown(
+        """
+        <h3 style='color: green;'>3. Tiền xử lý dữ liệu</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        **Các bước tiền xử lý dữ liệu:**
+        1. Bỏ các bình luận bị duplicate hoặc nan
+        2. Bỏ các dấu space, khoảng trắng dư thừa
+        3. Thay thế kí tự emoji
+        4. Thay thế các từ tiếng Anh thành tiếng Việt
+        5. Thay thế các từ teencode thành từ đọc được
+        6. Bỏ các stopword
+        """,
+        unsafe_allow_html=True,
+    )
+
+    #4. Phân tích dữ liệu
+    st.markdown(
+        """
+        <h3 style='color: green;'>4. Phân tích dữ liệu</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+    """
+    <h4>Trực quan hoá dữ liệu sau khi phân tích bằng các biểu đồ</h4>
+    """,
+    unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+    """
+    **Tỷ lệ bình luận tích cực và tiêu cực**
+    """,
+    unsafe_allow_html=True,
+    )
+    st.image("media/ti_le_pos_neg.jpg", use_container_width=True, width=350)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Tỷ lệ Topics trong bình luận tích cực**
+    """,
+    unsafe_allow_html=True,
+    )
+    
+    st.image("media/sentiment_label_positive.png", use_container_width=True, width=200)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Tỷ lệ Topics trong bình luận tiêu cực**
+    """,
+    unsafe_allow_html=True,
+    )
+    
+    st.image("media/sentimet_label_negative.png", use_container_width=True, width=200)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Phân bố số lượng bình luận trên mỗi sản phẩm**
+    """,
+    unsafe_allow_html=True,
+    )
+    
+    st.image("media/so_luong_binh_luan_tren_moi_user.png", use_container_width=True, width=800)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Số lượng bình luận theo tháng và năm**
+    """,
+    unsafe_allow_html=True,
+    )
+    st.image("media/so_luong_binh_luan_theo_thang_va_nam.png", use_container_width=True, width=800)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Số lượng bình luận theo giờ**
+    """,
+    unsafe_allow_html=True,
+    )
+    st.image("media/so_luong_binh_luan_theo_gio.png", use_container_width=True, width=800)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    **Biểu đồ tần suất số sao**
+    """,
+    unsafe_allow_html=True,
+    )
+    st.image("media/tan_suat_so_sao.png", use_container_width=True, width=800)
+
+    st.markdown(
+    """
+    **WordCloud cho các sentiment labels**
+    """,
+    unsafe_allow_html=True,
+    )
+    # Tạo hai cột
+    col1, col2 = st.columns(2)
+
+    # Hiển thị hình ảnh trong cột đầu tiên
+    with col1:
+        st.image("media/positive_comment.png", use_container_width=True)
+
+    # Hiển thị hình ảnh trong cột thứ hai
+    with col2:
+        st.image("media/negative_comment.png", use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    #5. Xây dựng model
+    st.markdown(
+        """
+        <h3 style='color: green;'>5 Xây dựng model</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+    """
+    <h4>5.1 Xây dựng model bằng Scikit-Learn</h4>
+    """,
+    unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        - Sử dụng TF-IDF để vectorize nội dung bình luận
+        - Build model bằng các thuật toán sau và kết quả
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.image("media/scikit_learn.png", use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    <h4>5.2 Xây dựng model bằng PySpark</h4>
+    """,
+    unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        - Sử dụng TF-IDF để vectorize nội dung bình luận
+        - Build model bằng các thuật toán sau và kết quả
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.image("media/PySpark.png", use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+    """
+    <h4>5.3 Xây dựng model bằng thư viện khác</h4>
+    """,
+    unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        - Sử dụng SentenceTransformer để vectorize nội dung bình luận
+        - Build model bằng các thuật toán
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.image("media/thu_vien_khac.png", use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    #6. Kết luận
+    st.markdown(
+        """
+        <h3 style='color: green;'>6 Kết luận</h3>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+    Sử dụng thuật toán Random Forest để áp dụng phân loại cảm xúc của bình luận vì độ chính xác cao.
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+    Nâng cao hiệu suất cho mô hình.
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.image("media/nang_cao_hieu_suat_random.png", use_container_width=True)
+
+##
 
 def build_product_analysis():
     if "product_mapping" not in st.session_state:
@@ -152,6 +422,8 @@ def build_product_analysis():
         )
     
     show_product_info(selected_value)
+
+
     
    
 def new_product_analysis():
@@ -199,16 +471,20 @@ def new_product_analysis():
 # ======= Main content =======
 def main_content():
     # Tiêu đề với màu xanh lục
-    st.markdown(
-        """
-        <h1 style='color: green;'>Phân tích đánh giá sản phẩm Hasaki</h1>
-        """,
-        unsafe_allow_html=True,
+    # Đặt cấu hình trang rộng hơn
+    st.set_page_config(
+        #page_title="My App",  # Tiêu đề của ứng dụng
+        #page_icon="🌟",       # Biểu tượng hiển thị trên tab
+        layout="wide",        # Chế độ hiển thị: "wide" hoặc "centered"
     )
-    #st.subheader("Thực hiện dự án")
-###
+    
+# Hiển thị tiêu đề với màu chữ trắng và khung nền xanh lá
+    # Hiển thị tiêu đề với khung nền
+    st.image("media/tieu_de.png", use_container_width=True)
 
- ###
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    #st.subheader("Thực hiện dự án")
        # Tiêu đề Menu
     st.sidebar.markdown(
         """
@@ -219,7 +495,7 @@ def main_content():
         unsafe_allow_html=True,
     )
     # Menu chính
-    menu = ["Đặt vấn đề và thực hiện dự án", "Phân tích sản phẩm", "Phân tích dữ liệu mới"]
+    menu = ["Mục tiêu dự án", "Thực hiện dự án", "Phân tích sản phẩm", "Phân tích dữ liệu mới"]
     choice = st.sidebar.selectbox("", menu)
 
     # Tiêu đề Thành viên thực hiện
@@ -254,8 +530,10 @@ def main_content():
     </div>
     """, unsafe_allow_html=True) 
 
-    if choice == 'Đặt vấn đề và thực hiện dự án':
+    if choice == 'Mục tiêu dự án':
         business_objective_content()
+    elif choice == 'Thực hiện dự án':
+        build_project_construction()
     elif choice == 'Phân tích sản phẩm':
         build_product_analysis()
     elif choice == 'Phân tích dữ liệu mới':
