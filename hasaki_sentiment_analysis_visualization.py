@@ -7,7 +7,11 @@ from hasaki_sentiment_analysis_prediction import VIETNAMESE_STOPWORDS_LIST
 
 def show_overview(product_infos, product_feedbacks):
     # === Đếm số lượng feedback và vẽ piechart ===
-    st.write(f"Số lượng feedback: {len(product_feedbacks)}")
+    #st.write(f"Số lượng feedback: {len(product_feedbacks)}")
+    st.markdown(
+    f"<h4 style='font-weight: bold;'>Số lượng feedback: {len(product_feedbacks)}</h4>",
+    unsafe_allow_html=True,
+)
 
     # === Thống kê theo số lượng so_sao từ 5 đến 1, nếu không có thì mặc định là 0 ===
     star_counts = product_feedbacks["so_sao"].value_counts().reindex([5, 4, 3, 2, 1], fill_value=0)
@@ -38,13 +42,20 @@ def show_overview(product_infos, product_feedbacks):
 
     # === Vẽ piechart cho các topics theo từng sentiment_label ===
     for label in ["positive", "negative"]:
-        st.write(f"Phân phối topics cho sentiment: {label}")
-        
+        #st.write(f"Phân phối topics cho sentiment: {label}")
+        st.markdown(
+    f"<h4 style='font-weight: bold;'>Phân phối topics cho sentiment: {label}</h4>",
+    unsafe_allow_html=True,
+)
         # Lọc các feedback theo sentiment_label hiện tại
         feedbacks = product_feedbacks[product_feedbacks["sentiment_label"] == label]
 
         if len(feedbacks) == 0:
-            st.write(f"Không có đánh giá cho sentiment: {label}")
+            #st.write(f"Không có feedback cho sentiment: {label}")
+            st.markdown(
+    f"<h4> => Không có feedback cho sentiment {label}</h4>",
+    unsafe_allow_html=True,
+)
             continue
         
         # Đếm số lượng feedback theo cột topic
@@ -119,7 +130,11 @@ def show_word_cloud(product_infos, product_feedbacks):
     # --- Vẽ word cloud cho từng nhãn sentiment ---
     for label in ["positive", "negative"]:
         try:
-            st.write(f"Word Cloud cho nhãn sentiment: {label}")
+            #st.write(f"Word Cloud cho nhãn sentiment: {label}")
+            st.markdown(
+    f"<h4 style='font-weight: bold;'>Word Cloud cho nhãn sentiment: {label}</h4>",
+    unsafe_allow_html=True,
+)
             
             # Lấy tất cả các feedback cho nhãn sentiment hiện tại
             feedbacks = ' '.join(product_feedbacks[product_feedbacks['sentiment_label'] == label]['normalized_text_with_boost_words'].values)
@@ -154,7 +169,11 @@ def show_word_cloud(product_infos, product_feedbacks):
 
 def analyze_and_visualize(product_infos, product_feedbacks):
     if len(product_feedbacks) == 0:
-        st.write("Không có dữ liệu feedback để phân tích")
+        #st.write("Không có dữ liệu feedback để phân tích")
+        st.markdown(
+    f"<h4>Không có dữ liệu feedback để phân tích</h4>",
+    unsafe_allow_html=True,
+)
         return
 
     show_overview(product_infos, product_feedbacks)
