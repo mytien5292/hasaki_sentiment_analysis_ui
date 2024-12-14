@@ -9,6 +9,8 @@ from hasaki_sentiment_analysis_prediction import predict_sentiment
 from hasaki_sentiment_analysis_visualization import analyze_and_visualize
 from streamlit_searchbox import st_searchbox
 
+FIND_ALL_TEXT = "Tìm tất cả sản phẩm có chứa từ khóa "
+
 # ======= Load data part =======
 @st.cache_data
 def load_boost_words():
@@ -83,7 +85,7 @@ def search_product_name(product_name):
     filter_rules = data_products['ten_san_pham_sl_danh_gia'].str.contains(product_name, case=False)
     product = data_products[filter_rules]
 
-    search_all_text = "Tìm tất cả sản phẩm có chứa từ khóa " + product_name
+    search_all_text = FIND_ALL_TEXT + product_name
     result = [search_all_text] + list(product["ten_san_pham_sl_danh_gia"].values)
 
     return result
@@ -96,12 +98,12 @@ def search_product_code(product_code):
     filter_rules = data_products['ma_san_pham_sl_danh_gia'].astype(str).str.contains(product_code, case=False)
     product = data_products[filter_rules]
 
-    search_all_text = "Tìm tất cả sản phẩm có chứa từ khóa " + product_code
+    search_all_text = FIND_ALL_TEXT + product_code
     result = [search_all_text] + list(product["ma_san_pham_sl_danh_gia"].values)
 
     return result
 
-def get_product_info(product_id):
+def get_product_info(product_ids):
     if "data_products" not in st.session_state:
         st.session_state.data_products = load_data_products()
 
@@ -111,8 +113,8 @@ def get_product_info(product_id):
     data_products = st.session_state.data_products
     data_feedbacks = st.session_state.data_feedbacks
 
-    product_feedbacks = data_feedbacks[data_feedbacks['ma_san_pham'] == product_id]
-    product_info = data_products[data_products['ma_san_pham'] == product_id]
+    product_feedbacks = data_feedbacks[data_feedbacks['ma_san_pham'].isin(product_ids)]
+    product_info = data_products[data_products['ma_san_pham'].isin(product_ids)]
 
     return product_info, product_feedbacks
 
@@ -120,14 +122,14 @@ def get_product_info(product_id):
 
 
 # ======= UI part =======
-def show_product_info(product_id):
-    product_infos, product_feedbacks = get_product_info(product_id)
+def show_product_info(product_ids):
+    product_infos, product_feedbacks = get_product_info(product_ids)
 
     if product_infos.empty:
         st.write("Không tìm thấy sản phẩm.")
         return
-
-    for product_info in product_infos.itertuples():
+    
+    def show_product_info_internal(product_info):
         #st.write(f"""##### {product_info.ten_san_pham}\n""")
         st.markdown(
             f"""
@@ -148,7 +150,21 @@ def show_product_info(product_id):
             """,
             unsafe_allow_html=True,
         )
- 
+        st.write("---")
+
+    with st.container(height=600):
+        index_counter = 0
+        col1, col2 = st.columns(2)
+        for product_info in product_infos.itertuples():
+            if index_counter % 2 == 0:
+                with col1:
+                    show_product_info_internal(product_info)
+            else:
+                with col2:
+                    show_product_info_internal(product_info)
+            
+            index_counter += 1
+        
     st.markdown(
         """
         <div style='background-color: #66BB6A; padding: 10px; border-radius: 5px; text-align: center;'>
@@ -474,28 +490,46 @@ def build_product_analysis():
     if search_type == "Tìm kiếm theo tên sản phẩm":
         selected_value = st_searchbox(
             search_product_name,
-            placeholder="Tìm kiếm tên sản phẩm",
-            default_use_searchterm=True,
+            placeholder="Tìm kiếm tên sản phẩm"
         )
 
-        print("--------------------------------")
-        print(selected_value)
-        print("--------------------------------")
+        if selected_value is not None:
+            if selected_value.startswith(FIND_ALL_TEXT):
+                input_text = selected_value[len(FIND_ALL_TEXT):]
 
-        selected_value = product_mapping.get(selected_value, "Không tìm thấy mã sản phẩm")
+                search_result = search_product_name(input_text)
+                selected_value = []
+
+                for x in search_result[1:]:
+                    selected_value.append(product_mapping.get(x, "Không tìm thấy mã sản phẩm"))
+            else:
+                selected_value = product_mapping.get(selected_value, "Không tìm thấy mã sản phẩm")
+                selected_value = [selected_value]
+        else:
+            selected_value = []
     else:
         selected_value = st_searchbox(
             search_product_code,
-            placeholder="Tìm kiếm mã sản phẩm",
-            default_use_searchterm=True,
+            placeholder="Tìm kiếm mã sản phẩm"
         )
-
-        print("--------------------------------")
-        print(selected_value)
-        print("--------------------------------")
-
+        
         if selected_value is not None:
-            selected_value = int(selected_value.split(" ")[0])
+            if selected_value.startswith(FIND_ALL_TEXT):
+                input_text = selected_value[len(FIND_ALL_TEXT):]
+
+                search_result = search_product_code(input_text)
+                selected_value = []
+
+                for x in search_result[1:]:
+                    selected_value.append(int(x.split(" ")[0]))
+            else:
+                try:
+                    selected_value = int(selected_value.split(" ")[0])
+                    selected_value = [selected_value]
+                except:
+                    selected_value = []
+        else:
+            selected_value = []
     
     show_product_info(selected_value)
    

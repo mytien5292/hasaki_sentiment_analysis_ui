@@ -76,12 +76,24 @@ def show_word_cloud(product_infos, product_feedbacks):
             # Tạo word cloud
             wordcloud = WordCloud(width=800, 
                                 height=400, 
-                                background_color='white',
-                                stopwords=VIETNAMESE_STOPWORDS_LIST).generate(feedbacks)
+                                background_color='white').generate(feedbacks)
             
+            # Lấy danh sách từ và trọng số
+            words = wordcloud.words_
+
+            # Xóa các từ không mong muốn
+            filtered_words = {word: weight for word, weight in words.items() if word not in VIETNAMESE_STOPWORDS_LIST}
+
+            # Tạo lại WordCloud sau khi xóa từ
+            wordcloud_filtered = WordCloud(
+                width=800,
+                height=400,
+                background_color='white'
+            ).generate_from_frequencies(filtered_words)
+
             # Vẽ word cloud
             fig, ax = plt.subplots(figsize=(10, 6))
-            ax.imshow(wordcloud, interpolation='bilinear')
+            ax.imshow(wordcloud_filtered, interpolation='bilinear')
             ax.axis('off')
             
             # Hiển thị word cloud bằng streamlit
@@ -94,6 +106,6 @@ def analyze_and_visualize(product_infos, product_feedbacks):
         st.write("Không có dữ liệu feedback để phân tích")
         return
 
-    show_feedback_count(product_infos, product_feedbacks)
     show_overview(product_infos, product_feedbacks)
+    show_feedback_count(product_infos, product_feedbacks)
     show_word_cloud(product_infos, product_feedbacks)
